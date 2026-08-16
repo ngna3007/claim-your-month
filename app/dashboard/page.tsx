@@ -68,6 +68,13 @@ const PLOT_H = 128;
 const AXIS_H = 22; // room for the first/last time tick
 const RADIUS = 4;
 
+// Must match .chart__scroll's padding in globals.css. The tooltip is
+// positioned against .chart (zero padding, unclipped), while the SVG lives
+// inside .chart__scroll (the padded, overflow-x:auto element) — so raw
+// SVG-local coordinates need this offset added back in to line up.
+const CHART_PAD_LEFT = 16;
+const CHART_PAD_TOP = 20;
+
 // Rounded top, square baseline — a path (not a plain rect) so only the
 // data-end rounds, per the mark spec ("square at the baseline").
 function barPath(x: number, y: number, w: number, h: number): string {
@@ -87,6 +94,7 @@ function barPath(x: number, y: number, w: number, h: number): string {
 
 function TimeChart({ series }: { series: Bucket[] }) {
   const [hover, setHover] = useState<number | null>(null);
+  const [scrollLeft, setScrollLeft] = useState(0);
 
   if (series.length === 0) {
     return (
@@ -111,61 +119,72 @@ function TimeChart({ series }: { series: Bucket[] }) {
 
   return (
     <div className="chart">
-      <svg
-        width={width}
-        height={height}
-        viewBox={`0 0 ${width} ${height}`}
-        role="group"
-        aria-label="Phished events by 15-minute window"
-      >
-        {/* faint recessive grid */}
-        <line className="chart__grid" x1={0} x2={width} y1={TOP_PAD} y2={TOP_PAD} />
-        <line className="chart__grid" x1={0} x2={width} y1={TOP_PAD + PLOT_H / 2} y2={TOP_PAD + PLOT_H / 2} />
-        <line className="chart__baseline" x1={0} x2={width} y1={baseline} y2={baseline} />
+      {/* .chart itself is the tooltip's positioning context: zero padding, overflow
+          visible, so it never clips the tooltip. Scrolling + padding live one level
+          down, on .chart__scroll, which wraps only the SVG. */}
+      <div className="chart__scroll" onScroll={(e) => setScrollLeft(e.currentTarget.scrollLeft)}>
+        <svg
+          width={width}
+          height={height}
+          viewBox={`0 0 ${width} ${height}`}
+          role="group"
+          aria-label="Phished events by 15-minute window"
+        >
+          {/* faint recessive grid */}
+          <line className="chart__grid" x1={0} x2={width} y1={TOP_PAD} y2={TOP_PAD} />
+          <line className="chart__grid" x1={0} x2={width} y1={TOP_PAD + PLOT_H / 2} y2={TOP_PAD + PLOT_H / 2} />
+          <line className="chart__baseline" x1={0} x2={width} y1={baseline} y2={baseline} />
 
-        {bars.map((b, i) => {
-          const emphasized = i === lastIndex || i === hover;
-          return (
-            <g key={b.t}>
-              {b.h > 0 && (
-                <path className="chart__bar" d={barPath(b.x, b.y, BAR_W, b.h)} fill={emphasized ? "var(--teal-bright)" : "var(--teal)"} />
-              )}
-              {/* hit target: full column height, wider than the bar itself */}
-              <rect
-                className="chart__hit"
-                x={b.x - GAP / 2}
-                y={TOP_PAD}
-                width={STEP}
-                height={PLOT_H}
-                tabIndex={0}
-                aria-label={`${fmtTime(b.t)}: ${b.count} phished`}
-                onMouseEnter={() => setHover(i)}
-                onMouseLeave={() => setHover((h) => (h === i ? null : h))}
-                onFocus={() => setHover(i)}
-                onBlur={() => setHover((h) => (h === i ? null : h))}
-              />
-            </g>
-          );
-        })}
+          {bars.map((b, i) => {
+            const emphasized = i === lastIndex || i === hover;
+            return (
+              <g key={b.t}>
+                {b.h > 0 && (
+                  <path className="chart__bar" d={barPath(b.x, b.y, BAR_W, b.h)} fill={emphasized ? "var(--teal-bright)" : "var(--teal)"} />
+                )}
+                {/* hit target: full column height, wider than the bar itself */}
+                <rect
+                  className="chart__hit"
+                  x={b.x - GAP / 2}
+                  y={TOP_PAD}
+                  width={STEP}
+                  height={PLOT_H}
+                  tabIndex={0}
+                  aria-label={`${fmtTime(b.t)}: ${b.count} phished`}
+                  onMouseEnter={() => setHover(i)}
+                  onMouseLeave={() => setHover((h) => (h === i ? null : h))}
+                  onFocus={() => setHover(i)}
+                  onBlur={() => setHover((h) => (h === i ? null : h))}
+                />
+              </g>
+            );
+          })}
 
-        {/* direct label: latest bar only */}
-        <text className="chart__value-label" x={latest.cx} y={Math.max(12, latest.y - 8)} textAnchor="middle">
-          {latest.count}
-        </text>
-
-        {/* axis: first + last time only, never one per bar */}
-        <text className="chart__tick" x={PAD_X} y={baseline + 16} textAnchor="start">
-          {fmtTime(bars[0].t)}
-        </text>
-        {series.length > 1 && (
-          <text className="chart__tick" x={width - PAD_X} y={baseline + 16} textAnchor="end">
-            {fmtTime(bars[lastIndex].t)}
+          {/* direct label: latest bar only */}
+          <text className="chart__value-label" x={latest.cx} y={Math.max(12, latest.y - 8)} textAnchor="middle">
+            {latest.count}
           </text>
-        )}
-      </svg>
+
+          {/* axis: first + last time only, never one per bar */}
+          <text className="chart__tick" x={PAD_X} y={baseline + 16} textAnchor="start">
+            {fmtTime(bars[0].t)}
+          </text>
+          {series.length > 1 && (
+            <text className="chart__tick" x={width - PAD_X} y={baseline + 16} textAnchor="end">
+              {fmtTime(bars[lastIndex].t)}
+            </text>
+          )}
+        </svg>
+      </div>
 
       {hover !== null && (
-        <div className="chart__tooltip" style={{ left: bars[hover].cx, top: Math.max(0, bars[hover].y - 8) }}>
+        <div
+          className="chart__tooltip"
+          style={{
+            left: CHART_PAD_LEFT + bars[hover].cx - scrollLeft,
+            top: CHART_PAD_TOP + Math.max(0, bars[hover].y - 8),
+          }}
+        >
           <strong>{bars[hover].count} phished</strong>
           <span>{fmtTime(bars[hover].t)}</span>
         </div>

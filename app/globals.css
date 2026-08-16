@@ -376,16 +376,25 @@ p { margin: 0; }
 .chart {
   width: 100%;
   max-width: 720px;
+  /* Unclipped, zero-padding positioning context for .chart__tooltip — its
+     origin matches .chart__scroll's padding-box exactly (see the
+     CHART_PAD_LEFT/CHART_PAD_TOP constants in page.tsx), so it never clips
+     the tooltip and never misaligns it. */
   position: relative;
-  overflow-x: auto;
   background: rgba(255, 255, 255, 0.97);
   border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: var(--radius-sm);
-  padding: 20px 16px 14px;
   box-shadow: 0 20px 50px -24px rgba(10, 20, 40, 0.55);
   animation: rise 0.5s var(--ease) 0.16s both;
 }
-.chart svg { display: block; }
+/* The scrolling + padded layer — SVG only. Kept separate from .chart so the
+   overflow-x:auto here (which per spec forces overflow-y to auto too) never
+   clips the tooltip, which lives in .chart instead. */
+.chart__scroll {
+  overflow-x: auto;
+  padding: 20px 16px 14px;
+}
+.chart__scroll svg { display: block; }
 .chart__empty { padding: 34px 8px; text-align: center; color: var(--muted); font-size: 13.5px; line-height: 1.5; }
 
 .chart__grid { stroke: var(--line); stroke-width: 1; opacity: 0.6; }
