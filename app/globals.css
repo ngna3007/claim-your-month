@@ -317,6 +317,108 @@ p { margin: 0; }
 .flyer__url { margin-top: 14px; font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); word-break: break-all; }
 .flyer__by { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
 
+/* ============================================================
+   Dashboard — /dashboard (live, anonymous organizer view)
+   ============================================================ */
+.dash {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
+  padding: clamp(28px, 6vw, 56px) clamp(16px, 5vw, 32px) clamp(44px, 6vw, 64px);
+  background: var(--hero);
+}
+.dash__head {
+  width: 100%;
+  max-width: 720px;
+  text-align: center;
+  animation: rise 0.5s var(--ease) both;
+}
+.dash__head h1 { font-size: clamp(22px, 5vw, 32px); color: var(--white); }
+.dash__head p { margin-top: 10px; color: rgba(255, 255, 255, 0.8); font-size: 14.5px; line-height: 1.5; }
+
+.dash__loading {
+  color: rgba(255, 255, 255, 0.92);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+/* larger stat tiles, opaque surfaces for contrast on the hero gradient */
+.tiles--dash {
+  width: 100%;
+  max-width: 720px;
+  margin-top: 0;
+  gap: 14px;
+  animation: rise 0.5s var(--ease) 0.08s both;
+}
+.tiles--dash .tile {
+  padding: 22px 14px;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.97);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 16px 40px -22px rgba(10, 20, 40, 0.5);
+}
+/* stat-tile value: BODY font semibold, never the display face */
+.tiles--dash .tile__value {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: clamp(24px, 5vw, 32px);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.tiles--dash .tile__label { font-size: 12px; color: var(--muted); }
+
+/* ---------- Time chart ---------- */
+.chart {
+  width: 100%;
+  max-width: 720px;
+  position: relative;
+  overflow-x: auto;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: var(--radius-sm);
+  padding: 20px 16px 14px;
+  box-shadow: 0 20px 50px -24px rgba(10, 20, 40, 0.55);
+  animation: rise 0.5s var(--ease) 0.16s both;
+}
+.chart svg { display: block; }
+.chart__empty { padding: 34px 8px; text-align: center; color: var(--muted); font-size: 13.5px; line-height: 1.5; }
+
+.chart__grid { stroke: var(--line); stroke-width: 1; opacity: 0.6; }
+.chart__baseline { stroke: var(--line); stroke-width: 1; opacity: 0.9; }
+.chart__bar { transition: fill 0.15s var(--ease); }
+.chart__hit { fill: transparent; cursor: pointer; }
+
+.chart__tick { font-family: var(--font-body); font-size: 10px; fill: var(--muted); }
+.chart__value-label {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 11px;
+  fill: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.chart__tooltip {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  background: var(--ink);
+  color: var(--white);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  line-height: 1.35;
+  white-space: nowrap;
+  box-shadow: 0 10px 24px -8px rgba(10, 20, 40, 0.45);
+  z-index: 5;
+}
+.chart__tooltip strong { display: block; font-weight: 700; font-variant-numeric: tabular-nums; }
+.chart__tooltip span { display: block; margin-top: 1px; color: rgba(255, 255, 255, 0.68); font-size: 10.5px; }
+
 /* ---------- Motion ---------- */
 @keyframes rise {
   from { opacity: 0; transform: translateY(14px); }
@@ -329,6 +431,10 @@ p { margin: 0; }
 @keyframes modal-in {
   from { opacity: 0; transform: translateY(16px) scale(0.96); }
   to { opacity: 1; transform: none; }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
