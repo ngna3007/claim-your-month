@@ -4,5 +4,6 @@ out
 *.db
 *.db-shm
 *.db-wal
+dev.db*
 .env*.local
 next-env.d.ts
