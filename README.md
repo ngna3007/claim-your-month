@@ -22,7 +22,7 @@ can reuse the numbers as post-event content. **No personal data is collected.**
 
 ## API
 
-- `POST /api/scan` — records a `/claim` page load (one per browser session, no PII).
+- `POST /api/scan` — records a `/claim` page load (deduped per mount; a refresh counts again), no PII.
 - `POST /api/phished` — records a form submission (one anonymous `phished` event). Returns
   `{ rank, scans, phished }` so the client can show "You're phish #N".
 - `GET /api/stats` — returns `{ scans, phished, phishRate, series }` where `series` is a

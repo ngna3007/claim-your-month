@@ -63,12 +63,19 @@ export async function getStats(): Promise<{
 }> {
   await init();
   const [phished, scans] = await Promise.all([count("phished"), count("scan")]);
-  const rows = await client().execute({
-    sql: `SELECT (ts / ?) * ? AS bucket, COUNT(*) AS c
+  // BUCKET_MS is our own trusted constant (never user input), so it's safe to interpolate
+  // directly into the SQL as an integer literal. This matters: @libsql/client's remote
+  // (hrana) transport always encodes a bound JS `number` as a wire "float", so binding
+  // BUCKET_MS via `?` would make SQLite perform floating-point division here — turning
+  // `(ts / 900000.0) * 900000.0` into ~one bucket per event on remote Turso, even though
+  // whole-number args happen to bind as integers on the local `file:` path (which is why
+  // that path looked fine). Interpolating keeps this integer division regardless of
+  // transport.
+  const rows = await client().execute(
+    `SELECT (ts / ${BUCKET_MS}) * ${BUCKET_MS} AS bucket, COUNT(*) AS c
           FROM events WHERE type = 'phished'
           GROUP BY bucket ORDER BY bucket`,
-    args: [BUCKET_MS, BUCKET_MS],
-  });
+  );
   const series = rows.rows.map((r) => ({ t: Number(r.bucket), count: Number(r.c) }));
   return { scans, phished, phishRate: scans > 0 ? phished / scans : 0, series };
 }
