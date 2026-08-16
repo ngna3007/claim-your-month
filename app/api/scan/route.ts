@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { recordEvent } from "@/lib/db";
+import { recordScan } from "@/lib/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export function POST() {
-  recordEvent("scan");
+export async function POST() {
+  await recordScan();
   return NextResponse.json({ ok: true });
 }

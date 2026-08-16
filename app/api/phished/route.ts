@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { recordEvent } from "@/lib/db";
+import { recordPhished } from "@/lib/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export function POST() {
-  recordEvent("phished");
-  return NextResponse.json({ ok: true });
+// Body is ignored on purpose: the fake form's field values are never sent or read.
+export async function POST() {
+  const result = await recordPhished();
+  return NextResponse.json(result);
 }
