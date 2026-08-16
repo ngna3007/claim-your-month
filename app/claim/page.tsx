@@ -4,45 +4,11 @@ import { useEffect, useRef, useState } from "react";
 
 // TODO: swap this placeholder for the real CodeCatalyst registration URL.
 const REGISTRATION_URL = "#registration-link-placeholder";
-const GIFT_FILENAME = "claude-pro-giftcode.txt";
 
-// The bytes of the downloaded file — this is the reveal. Nothing on screen
-// gives it away; the lesson lands when the participant opens the file.
-function giftFileContents(): string {
-  return `==============================
-       CLAUDE PRO GIFT CODE
-          1 MONTH FREE
-==============================
-
-Gift code: CPRO-8K7M-2Q4P
-
-Wait... that isn't a real code.
-
-Yep, you just got phished by CodeCatalyst. 🎣
-
-You scanned a QR code for a free gift and
-downloaded a file from it. A real scam can
-use the same trick to put something harmful
-on your device.
-
-You're safe here. This file is only text.
-We didn't collect any personal info. We only
-kept anonymous scan and click counts.
-
-This was CodeCatalyst's friendly welcome
-surprise for the workshop. The lesson showed
-up as soon as you opened the file.
-
-Want to join the workshop?
-${REGISTRATION_URL}
-
-See you there!
-CodeCatalyst
-`;
-}
+type Stats = { rank: number; scans: number; phished: number };
 
 export default function ClaimPage() {
-  const [stage, setStage] = useState<"promo" | "complete">("promo");
+  const [result, setResult] = useState<Stats | null>(null);
   const scanReported = useRef(false);
 
   // Record the scan once when the page loads.
@@ -52,18 +18,160 @@ export default function ClaimPage() {
     void fetch("/api/scan", { method: "POST" }).catch(() => {});
   }, []);
 
-  function handleClaim() {
-    void fetch("/api/phished", { method: "POST" }).catch(() => {});
-    setStage("complete");
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    // Ethics: the typed values are never read or sent. Empty POST only.
+    let data: Stats = { rank: 0, scans: 0, phished: 0 };
+    try {
+      const res = await fetch("/api/phished", { method: "POST" });
+      data = await res.json();
+    } catch {
+      /* offline: still reveal, with a zeroed rank */
+    }
+    setResult(data);
   }
 
   return (
     <main className="stage">
-      <Promo onClaim={handleClaim} />
-      {stage === "complete" && <CompleteOverlay />}
+      {result ? <Reveal stats={result} /> : <BaitForm onSubmit={handleSubmit} />}
     </main>
   );
 }
+
+function BaitForm({ onSubmit }: { onSubmit: (e: React.FormEvent) => void }) {
+  return (
+    <section className="card promo">
+      <Brand />
+      <h1 className="promo__head">Get Claude Pro free for a month.</h1>
+      <p className="promo__sub">Tell us where to send it and it&apos;s yours.</p>
+      <form className="form" onSubmit={onSubmit}>
+        <label className="field">
+          <span>Full name</span>
+          <input type="text" autoComplete="off" placeholder="Alex Nguyen" />
+        </label>
+        <label className="field">
+          <span>Email</span>
+          <input type="email" autoComplete="off" placeholder="alex@school.edu" />
+        </label>
+        <label className="field">
+          <span>Student ID</span>
+          <input type="text" autoComplete="off" placeholder="e.g. 100493" />
+        </label>
+        <button className="btn" type="submit">Claim my free month</button>
+      </form>
+      <p className="fine">For CodeCatalyst students. Limited to 50 gifts.</p>
+    </section>
+  );
+}
+
+function Reveal({ stats }: { stats: Stats }) {
+  const n = useCountUp(stats.rank);
+  const rate = stats.scans > 0 ? Math.round((stats.phished / stats.scans) * 100) : 0;
+  return (
+    <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="reveal-title">
+      <Confetti />
+      <section className="card reveal">
+        <span className="badge badge--ok"><CheckIcon /> Gotcha</span>
+        <h1 id="reveal-title" className="reveal__head">You just got phished.</h1>
+        <p className="reveal__turn">Don&apos;t worry — it&apos;s a game, and you&apos;re in good company.</p>
+
+        <p className="bignum">You&apos;re phish <b>#{n}</b> today</p>
+
+        <div className="tiles">
+          <Tile label="Scanned the QR" value={stats.scans} />
+          <Tile label="Got phished" value={stats.phished} />
+          <Tile label="Fell for it" value={`${rate}%`} />
+        </div>
+        <Bar phished={stats.phished} scans={stats.scans} />
+
+        <div className="insight">
+          <BulbIcon />
+          <p><b>What is phishing?</b> A fake offer that tricks you into handing over your
+          info. This one looked official and free — that&apos;s the trick. Always check
+          who&apos;s really asking before you type anything.</p>
+        </div>
+
+        <p className="reassure">We didn&apos;t save your name, email, or ID. Promise.</p>
+        <p className="merch">Show this screen to a CodeCatalyst member to grab your <b>free sticker</b>!</p>
+        <a className="btn btn--teal" href={REGISTRATION_URL}>Come join us</a>
+      </section>
+    </div>
+  );
+}
+
+/* ---------- Reveal helpers ---------- */
+
+function useCountUp(target: number, duration = 900): number {
+  const [value, setValue] = useState(() => {
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return target;
+    }
+    return 0;
+  });
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setValue(target);
+      return;
+    }
+    let raf = 0;
+    const start = performance.now();
+    function tick(now: number) {
+      const progress = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.round(eased * target));
+      if (progress < 1) raf = requestAnimationFrame(tick);
+    }
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+
+  return value;
+}
+
+function Tile({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="tile">
+      <span className="tile__value">{value}</span>
+      <span className="tile__label">{label}</span>
+    </div>
+  );
+}
+
+function Bar({ phished, scans }: { phished: number; scans: number }) {
+  const raw = scans > 0 ? (phished / scans) * 100 : 0;
+  const target = Math.min(100, Math.max(6, raw));
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setWidth(target);
+      return;
+    }
+    const raf = requestAnimationFrame(() => setWidth(target));
+    return () => cancelAnimationFrame(raf);
+  }, [target]);
+
+  return (
+    <div className="bar" role="img" aria-label={`${phished} of ${scans} scans got phished`}>
+      <div className="bar__fill" style={{ width: `${width}%` }} />
+    </div>
+  );
+}
+
+function BulbIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"
+      stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 18h6" />
+      <path d="M10 21h4" />
+      <path d="M9.5 15.5 9.4 14a2.6 2.6 0 0 0-1.02-1.94 6 6 0 1 1 7.24 0A2.6 2.6 0 0 0 14.6 14l-.1 1.5Z" />
+      <path d="M12 6v2.2" />
+    </svg>
+  );
+}
+
+/* ---------- Brand lockup ---------- */
 
 function Brand() {
   return (
@@ -72,93 +180,6 @@ function Brand() {
       <img src="/coca-logo.png" alt="CodeCatalyst" width={34} height={28} />
       CodeCatalyst
     </span>
-  );
-}
-
-function Promo({ onClaim }: { onClaim: () => void }) {
-  return (
-    <section className="card promo">
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        <Brand />
-        <span className="badge">
-          <CheckIcon />
-          One of 50
-        </span>
-      </div>
-
-      <h1 className="promo__head">You get one month of Claude Pro.</h1>
-      <p className="promo__sub">
-        CodeCatalyst is giving it away for free. Tap below to get your gift code.
-      </p>
-
-      <dl className="gift">
-        <div>
-          <dt>Your gift</dt>
-          <dd>1 month of Claude Pro</dd>
-        </div>
-        <div className="gift__val">
-          <dt>Cost</dt>
-          <dd className="gift__price">
-            <span className="gift__strike">$20</span>$0
-          </dd>
-        </div>
-      </dl>
-
-      <button className="btn" onClick={onClaim}>Get my code</button>
-      <p className="fine">For K-8 students. Limited to 50 gifts.</p>
-    </section>
-  );
-}
-
-function CompleteOverlay() {
-  const [downloaded, setDownloaded] = useState(false);
-
-  function download() {
-    const blob = new Blob([giftFileContents()], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = GIFT_FILENAME;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-    setDownloaded(true);
-  }
-
-  return (
-    <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="claim-complete-title">
-      <Confetti />
-      <section className="card modal">
-        <span className="badge badge--ok">
-          <CheckIcon />
-          Gift ready
-        </span>
-
-        <h1 id="claim-complete-title" className="modal__head">Your gift code is ready.</h1>
-        <p className="modal__sub">
-          It&apos;s in this text file. Download the file, then open it to find your code.
-        </p>
-
-        <button type="button" className="file" onClick={download}>
-          <span className="file__icon"><FileIcon /></span>
-          <span className="file__meta">
-            <span className="file__name">{GIFT_FILENAME}</span>
-            <span className="file__size">~1 KB · text file</span>
-          </span>
-          <span className="file__dl"><DownloadIcon /></span>
-        </button>
-
-        {downloaded ? (
-          <p className="modal__hint">
-            <CheckIcon />
-            <span>Downloaded! Open <b>{GIFT_FILENAME}</b> to find your code.</span>
-          </p>
-        ) : (
-          <p className="fine">Tip: open the file in any text app.</p>
-        )}
-      </section>
-    </div>
   );
 }
 
@@ -258,27 +279,6 @@ function CheckIcon() {
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"
       stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
       <path d="M20 6 9 17l-5-5" />
-    </svg>
-  );
-}
-
-function FileIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"
-      stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
-      <path d="M14 3v5h5" />
-    </svg>
-  );
-}
-
-function DownloadIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 3v12" />
-      <path d="m7 10 5 5 5-5" />
-      <path d="M5 21h14" />
     </svg>
   );
 }

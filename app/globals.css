@@ -1,9 +1,12 @@
 /* ============================================================
    Phishing for Welcome — CodeCatalyst design system
    Palette, type, and surfaces adopted from the CodeCatalyst booklet.
-   Act 1 (bright hero):   the branded reward — the bait.
-   Act 2 (confetti modal): "claim complete" + a gift-code file whose
-                           contents are the gotcha; downloads a .txt.
+   Act 1 (bright hero):    the branded reward pitch — a bait FORM
+                           (name / email / student ID, all optional).
+   Act 2 (confetti reveal): submitting instantly reveals — on screen —
+                           that it was a phishing drill: a count-up
+                           rank, a small stat viz, and a "what is
+                           phishing" insight box.
    ============================================================ */
 
 :root {
@@ -17,7 +20,7 @@
   --line: #e2e8f0;
   --white: #ffffff;
 
-  /* deep navy — used to dim the page behind the claim-complete modal */
+  /* deep navy — used to dim the page behind the reveal overlay */
   --deep-2: #0a1428;
 
   --hero: radial-gradient(120% 120% at 15% 0%, #2e4d8a 0%, var(--navy) 38%, var(--indigo) 68%, var(--teal) 100%);
@@ -135,26 +138,46 @@ p { margin: 0; }
 }
 .promo__head { margin-top: 22px; font-size: clamp(25px, 6vw, 31px); color: var(--ink); }
 .promo__sub { margin-top: 14px; color: var(--muted); font-size: 16px; line-height: 1.55; max-width: 36ch; }
-.gift {
-  margin: 24px 0;
-  padding: 16px 18px;
+
+/* ---------- Bait form (the trick: fields are never read or sent) ---------- */
+.form {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+}
+.field input {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 400;
+  padding: 12px 14px;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  background: linear-gradient(180deg, rgba(50,170,178,0.05), transparent);
+  background: #fff;
+  color: var(--ink);
+  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
-.gift dt { font-size: 12px; color: var(--muted); letter-spacing: 0.02em; }
-.gift dd { margin: 3px 0 0; font-weight: 700; font-size: 15px; color: var(--ink); }
-.gift__val { text-align: right; }
-.gift__price { font-family: var(--font-mono); }
-.gift__strike { color: var(--muted); text-decoration: line-through; margin-right: 6px; font-weight: 500; }
+.field input::placeholder { color: var(--muted); }
+.field input:hover { border-color: color-mix(in srgb, var(--teal) 45%, var(--line)); }
+.field input:focus-visible {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal-bright) 30%, transparent);
+}
+.form .btn { margin-top: 4px; }
+
 .fine { margin-top: 18px; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
 
 /* ============================================================
-   Act 2 — claim complete (confetti modal + gift-code file)
+   Act 2 — the reveal (confetti overlay + phishing gotcha)
    ============================================================ */
 .overlay {
   position: fixed;
@@ -178,64 +201,93 @@ p { margin: 0; }
   z-index: 40;
 }
 
-.modal { animation: modal-in 0.34s var(--ease) both; }
+.reveal { animation: modal-in 0.34s var(--ease) both; }
 .badge--ok {
   color: #06585f;
   background: color-mix(in srgb, var(--teal) 20%, transparent);
 }
-.modal__head { margin-top: 20px; font-size: clamp(24px, 6vw, 30px); color: var(--ink); }
-.modal__sub { margin-top: 12px; color: var(--muted); font-size: 15.5px; line-height: 1.55; }
+.reveal__head { margin-top: 20px; font-size: clamp(24px, 6vw, 30px); color: var(--ink); }
+.reveal__turn { margin-top: 10px; color: var(--muted); font-size: 15px; line-height: 1.55; }
 
-/* the "file" the reward saved for you — click to download */
-.file {
+/* hero number — the single most important stat, called out inline */
+.bignum {
   margin-top: 22px;
-  width: 100%;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.bignum b {
+  font-family: var(--font-display);
+  font-size: 1.9em;
+  font-weight: 700;
+  color: var(--teal);
+  font-variant-numeric: tabular-nums;
+}
+
+/* stat tiles — one hue (teal), no categorical palette needed */
+.tiles {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.tile {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 14px;
-  text-align: left;
-  cursor: pointer;
-  padding: 14px 16px;
+  gap: 4px;
+  padding: 14px 8px;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   background: linear-gradient(180deg, rgba(50, 170, 178, 0.06), transparent);
-  transition: transform 0.16s var(--ease), box-shadow 0.2s var(--ease), border-color 0.2s var(--ease);
-  animation: rise 0.5s 0.12s var(--ease) both;
+  text-align: center;
 }
-.file:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--teal) 55%, var(--line)); box-shadow: 0 14px 30px -18px rgba(36, 61, 113, 0.6); }
-.file:active { transform: translateY(0); }
-.file__icon {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  color: #fff;
-  background: var(--grad-btn);
+.tile__value {
+  font-family: var(--font-display);
+  font-size: clamp(17px, 4vw, 20px);
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
-.file__meta { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.file__name { font-family: var(--font-mono); font-size: 14px; font-weight: 600; color: var(--ink); }
-.file__size { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
-.file__dl { margin-left: auto; flex: none; color: var(--navy); }
+.tile__label { font-size: 10.5px; color: var(--muted); line-height: 1.3; letter-spacing: 0.01em; }
 
-/* the reveal is NOT shown here — it lives inside the downloaded .txt.
-   before download: a neutral nudge; after download: a confirmation. */
-.modal__hint {
+/* meter — recessive track + teal fill, 4px rounded end, min-width for tiny values */
+.bar {
   margin-top: 16px;
+  height: 10px;
+  border-radius: 4px;
+  background: var(--line);
+  overflow: hidden;
+}
+.bar__fill {
+  height: 100%;
+  min-width: 6%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--teal), var(--teal-bright));
+  transition: width 0.8s var(--ease);
+}
+
+/* insight box — the "what is phishing" teaching moment */
+.insight {
+  margin-top: 22px;
   display: flex;
   align-items: flex-start;
-  gap: 9px;
-  font-size: 13.5px;
-  line-height: 1.5;
-  color: #06585f;
-  background: color-mix(in srgb, var(--teal) 12%, transparent);
+  gap: 12px;
+  text-align: left;
+  padding: 14px 16px;
   border-radius: var(--radius-sm);
-  padding: 12px 14px;
+  background: color-mix(in srgb, var(--teal) 10%, transparent);
   animation: rise 0.4s var(--ease) both;
 }
-.modal__hint svg { flex: none; margin-top: 3px; }
-.modal__hint b { font-family: var(--font-mono); font-weight: 600; white-space: nowrap; }
+.insight svg { flex: none; margin-top: 1px; color: var(--navy); }
+.insight p { font-size: 13.5px; line-height: 1.55; color: var(--ink); }
+.insight b { color: var(--navy); }
+
+.reassure { margin-top: 18px; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.merch { margin-top: 8px; font-size: 14.5px; color: var(--ink); line-height: 1.5; }
+.merch b { color: var(--navy); }
+.reveal .btn { margin-top: 18px; }
 
 /* ============================================================
    Poster (flyer) — /
@@ -281,5 +333,5 @@ p { margin: 0; }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
-  .promo, .modal, .file, .modal__hint { filter: none !important; transform: none !important; }
+  .promo, .reveal, .insight { filter: none !important; transform: none !important; }
 }
