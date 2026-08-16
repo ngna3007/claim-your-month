@@ -53,10 +53,6 @@ function BaitForm({ onSubmit }: { onSubmit: (e: React.FormEvent) => void }) {
           <span>Email</span>
           <input type="email" autoComplete="off" placeholder="alex@school.edu" />
         </label>
-        <label className="field">
-          <span>Student ID</span>
-          <input type="text" autoComplete="off" placeholder="e.g. 100493" />
-        </label>
         <button className="btn" type="submit">Claim my free month</button>
       </form>
       <p className="fine">For CodeCatalyst students. Limited to 50 gifts.</p>
@@ -91,7 +87,7 @@ function Reveal({ stats }: { stats: Stats }) {
           who&apos;s really asking before you type anything.</p>
         </div>
 
-        <p className="reassure">We didn&apos;t save your name, email, or ID. Promise.</p>
+        <p className="reassure">We didn&apos;t save your name or email. Promise.</p>
         <p className="merch">Show this screen to a CodeCatalyst member to grab your <b>free sticker</b>!</p>
         <a className="btn btn--teal" href={REGISTRATION_URL}>Come join us</a>
       </section>

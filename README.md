@@ -1,8 +1,8 @@
 # Phishing for Welcome
 
 A phishing-awareness recruitment stunt for **CodeCatalyst**. Students scan a QR promising
-free Claude Pro, land on a branded "claim your gift" page, fill in a fake form (name, email,
-student ID), and submit. Instantly, they see an on-screen reveal: *You just got phished.*
+free Claude Pro, land on a branded "claim your gift" page, fill in a fake form (name, email),
+and submit. Instantly, they see an on-screen reveal: *You just got phished.*
 Nothing they typed is stored — only an anonymous `phished` event is recorded. The screen shows
 their rank ("You're phish #42"), live stats (scans, phished, % who fell for it), and an insight
 box explaining what phishing is. A reassurance confirms nothing is saved. They're invited to
@@ -14,7 +14,7 @@ can reuse the numbers as post-event content. **No personal data is collected.**
 ## Pages
 
 - `/` — the QR poster (print it or show it on a screen). The QR points to `/claim`.
-- `/claim` — the branded bait form with three fields (never submitted to the server). On
+- `/claim` — the branded bait form (name, email; never submitted to the server). On
   submit, records an anonymous `phished` event and shows the on-screen reveal: rank,
   stats tiles, a live chart of phish events over time, an insight box, and a sticker CTA.
 - `/dashboard` — live organizer view (tiles + phished-over-time chart, polls every 4 seconds).
