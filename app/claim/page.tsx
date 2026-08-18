@@ -31,8 +31,17 @@ export default function ClaimPage() {
     setResult(data);
   }
 
+  useEffect(() => {
+    if (!result) return;
+    const previous = document.title;
+    document.title = "You just got phished - CodeCatalyst";
+    return () => {
+      document.title = previous;
+    };
+  }, [result]);
+
   return (
-    <main className="stage">
+    <main className={result ? "stage" : "stage stage--lure"}>
       {result ? <Reveal stats={result} /> : <BaitForm onSubmit={handleSubmit} />}
     </main>
   );
@@ -41,7 +50,6 @@ export default function ClaimPage() {
 function BaitForm({ onSubmit }: { onSubmit: (e: React.FormEvent) => void }) {
   return (
     <section className="card promo">
-      <Brand />
       <h1 className="promo__head">Get Claude Pro free for a month.</h1>
       <p className="promo__sub">Tell us where to send it and it&apos;s yours.</p>
       <form className="form" onSubmit={onSubmit}>
@@ -55,7 +63,7 @@ function BaitForm({ onSubmit }: { onSubmit: (e: React.FormEvent) => void }) {
         </label>
         <button className="btn" type="submit">Claim my free month</button>
       </form>
-      <p className="fine">For CodeCatalyst students. Limited to 50 gifts.</p>
+      <p className="fine">Limited to 50 gifts. Students only.</p>
     </section>
   );
 }
@@ -67,6 +75,7 @@ function Reveal({ stats }: { stats: Stats }) {
     <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="reveal-title">
       <Confetti />
       <section className="card reveal">
+        <Brand />
         <span className="badge badge--ok"><CheckIcon /> Gotcha</span>
         <h1 id="reveal-title" className="reveal__head">You just got phished.</h1>
         <p className="reveal__turn">Don&apos;t worry — it&apos;s a game, and you&apos;re in good company.</p>

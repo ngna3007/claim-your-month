@@ -1,12 +1,11 @@
 /* ============================================================
-   Phishing for Welcome — CodeCatalyst design system
-   Palette, type, and surfaces adopted from the CodeCatalyst booklet.
-   Act 1 (bright hero):    the branded reward pitch — a bait FORM
-                           (name / email / student ID, all optional).
-   Act 2 (confetti reveal): submitting instantly reveals — on screen —
-                           that it was a phishing drill: a count-up
-                           rank, a small stat viz, and a "what is
-                           phishing" insight box.
+   Phishing for Welcome
+   Act 1 (lure):           anonymous flyer + claim form. No club
+                           logo, type, or palette — the QR should
+                           feel unknown.
+   Act 2 (club reveal):    submitting drops the CodeCatalyst
+                           identity: booklet palette, Orbitron,
+                           logo, rank, and the phishing insight.
    ============================================================ */
 
 :root {
@@ -46,7 +45,7 @@ html, body {
   text-rendering: optimizeLegibility;
 }
 
-body { background: var(--navy); color: var(--ink); }
+body { background: #eceef1; color: var(--ink); }
 
 ::selection { background: color-mix(in srgb, var(--teal) 30%, transparent); }
 :focus-visible { outline: 2px solid var(--teal-bright); outline-offset: 3px; border-radius: 6px; }
@@ -69,6 +68,55 @@ p { margin: 0; }
   padding: clamp(20px, 5vw, 48px);
   background: var(--hero);
 }
+
+/* Anonymous bait — no club palette, display face, or logo */
+.stage--lure {
+  --ink: #18181b;
+  --muted: #52525b;
+  --line: #e4e4e7;
+  --white: #ffffff;
+  --radius: 16px;
+  --radius-sm: 10px;
+  background: #eceef1;
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.stage--lure h1,
+.stage--lure h2,
+.stage--lure .btn,
+.stage--lure .badge,
+.stage--lure .flyer__scan {
+  font-family: inherit;
+}
+.stage--lure ::selection { background: rgba(24, 24, 27, 0.14); }
+.stage--lure :focus-visible { outline-color: #18181b; }
+.stage--lure .card {
+  background: #fff;
+  border: 1px solid #e4e4e7;
+  box-shadow: 0 18px 44px -28px rgba(24, 24, 27, 0.35), 0 1px 3px rgba(24, 24, 27, 0.06);
+  backdrop-filter: none;
+}
+.stage--lure .badge {
+  color: #3f3f46;
+  background: #f4f4f5;
+  letter-spacing: 0.02em;
+}
+.stage--lure .btn {
+  background: #18181b;
+  box-shadow: none;
+}
+.stage--lure .btn:hover {
+  transform: translateY(-1px);
+  filter: none;
+  background: #27272a;
+  box-shadow: none;
+}
+.stage--lure .field input:hover { border-color: #a1a1aa; }
+.stage--lure .field input:focus-visible {
+  border-color: #18181b;
+  box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.12);
+}
+.stage--lure .flyer__scan { color: #3f3f46; }
 
 /* ---------- Brand lockup ---------- */
 .brand {
@@ -202,6 +250,8 @@ p { margin: 0; }
 }
 
 .reveal { animation: modal-in 0.34s var(--ease) both; }
+.reveal .brand { display: flex; color: var(--navy); }
+.reveal .badge { margin-top: 16px; }
 .badge--ok {
   color: #06585f;
   background: color-mix(in srgb, var(--teal) 20%, transparent);
@@ -315,7 +365,6 @@ p { margin: 0; }
   color: var(--navy);
 }
 .flyer__url { margin-top: 14px; font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); word-break: break-all; }
-.flyer__by { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
 
 /* ============================================================
    Dashboard — /dashboard (live, anonymous organizer view)

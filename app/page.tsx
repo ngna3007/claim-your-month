@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import QRCode from "qrcode";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Free Claude Pro",
+  description: "50 free months of Claude Pro. Scan the QR code to claim yours.",
+};
 
 async function getClaimUrl(): Promise<string> {
   const envBase = process.env.NEXT_PUBLIC_BASE_URL;
@@ -17,15 +23,15 @@ export default async function PosterPage() {
   const qr = await QRCode.toDataURL(claimUrl, {
     width: 560,
     margin: 0,
-    color: { dark: "#0f172a", light: "#ffffff" },
+    color: { dark: "#18181b", light: "#ffffff" },
   });
 
   return (
-    <main className="stage">
+    <main className="stage stage--lure">
       <section className="card flyer">
-        <span className="badge">First 50 K-8 students</span>
+        <span className="badge">First 50 students</span>
         <h1 className="flyer__head">Get Claude Pro free for a month</h1>
-        <p className="flyer__sub">CodeCatalyst has 50 to give away. Scan the QR code to claim yours.</p>
+        <p className="flyer__sub">50 months to give away. Scan the QR code to claim yours.</p>
 
         <div className="flyer__qr">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -38,14 +44,6 @@ export default async function PosterPage() {
         </span>
 
         <p className="flyer__url">{claimUrl}</p>
-
-        <div className="flyer__by">
-          <span className="brand" style={{ color: "var(--navy)" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/coca-logo.png" alt="" width={34} height={28} />
-            From CodeCatalyst
-          </span>
-        </div>
       </section>
     </main>
   );

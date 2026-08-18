@@ -21,9 +21,8 @@ const mono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Claim your free Claude Pro — CodeCatalyst",
-  description: "CodeCatalyst is giving 50 students one month of Claude Pro, free.",
-  icons: { icon: "/coca-logo.png" },
+  title: "Claim your free Claude Pro",
+  description: "50 free months of Claude Pro. Scan to claim yours.",
 };
 
 export const viewport = { width: "device-width", initialScale: 1 };
