@@ -1,19 +1,35 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { readReveal, writeReveal } from "@/lib/reveal-store";
 import { joinLabel, joinUrl, merch } from "@/lib/site";
 
 type Stats = { rank: number; scans: number; phished: number };
 
 export default function ClaimPage() {
+  const [ready, setReady] = useState(false);
   const [result, setResult] = useState<Stats | null>(null);
   const scanReported = useRef(false);
 
-  // Record the scan once when the page loads.
   useEffect(() => {
-    if (scanReported.current) return;
-    scanReported.current = true;
-    void fetch("/api/scan", { method: "POST" }).catch(() => {});
+    const stored = readReveal();
+    if (stored) {
+      setResult(stored);
+      void fetch("/api/stats")
+        .then((r) => r.json())
+        .then((s: { scans?: number; phished?: number }) => {
+          setResult((prev) =>
+            prev
+              ? { ...prev, scans: Number(s.scans) || prev.scans, phished: Number(s.phished) || prev.phished }
+              : prev,
+          );
+        })
+        .catch(() => {});
+    } else if (!scanReported.current) {
+      scanReported.current = true;
+      void fetch("/api/scan", { method: "POST" }).catch(() => {});
+    }
+    setReady(true);
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -26,6 +42,7 @@ export default function ClaimPage() {
     } catch {
       /* offline: still reveal, with a zeroed rank */
     }
+    writeReveal(data);
     setResult(data);
   }
 
@@ -37,6 +54,8 @@ export default function ClaimPage() {
       document.title = previous;
     };
   }, [result]);
+
+  if (!ready) return <main className="stage stage--lure" />;
 
   return (
     <main className={result ? "stage" : "stage stage--lure"}>
@@ -68,7 +87,7 @@ function BaitForm({ onSubmit }: { onSubmit: (e: React.FormEvent) => void }) {
 
 function Reveal({ stats }: { stats: Stats }) {
   const n = useCountUp(stats.rank);
-  const rate = stats.scans > 0 ? Math.round((stats.phished / stats.scans) * 100) : 0;
+  const rate = stats.scans > 0 ? Math.min(100, Math.round((stats.phished / stats.scans) * 100)) : 0;
   return (
     <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="reveal-title">
       <Confetti />
