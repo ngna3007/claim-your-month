@@ -9,11 +9,13 @@ type Stats = { rank: number; scans: number; phished: number };
 export default function ClaimPage() {
   const [ready, setReady] = useState(false);
   const [result, setResult] = useState<Stats | null>(null);
+  const [restored, setRestored] = useState(false);
   const scanReported = useRef(false);
 
   useEffect(() => {
     const stored = readReveal();
     if (stored) {
+      setRestored(true);
       setResult(stored);
       void fetch("/api/stats")
         .then((r) => r.json())
@@ -59,7 +61,7 @@ export default function ClaimPage() {
 
   return (
     <main className={result ? "stage" : "stage stage--lure"}>
-      {result ? <Reveal stats={result} /> : <BaitForm onSubmit={handleSubmit} />}
+      {result ? <Reveal stats={result} instant={restored} /> : <BaitForm onSubmit={handleSubmit} />}
     </main>
   );
 }
@@ -85,8 +87,8 @@ function BaitForm({ onSubmit }: { onSubmit: (e: React.FormEvent) => void }) {
   );
 }
 
-function Reveal({ stats }: { stats: Stats }) {
-  const n = useCountUp(stats.rank);
+function Reveal({ stats, instant = false }: { stats: Stats; instant?: boolean }) {
+  const n = useCountUp(stats.rank, 900, instant);
   const rate = stats.scans > 0 ? Math.min(100, Math.round((stats.phished / stats.scans) * 100)) : 0;
   return (
     <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="reveal-title">
@@ -127,8 +129,9 @@ function Reveal({ stats }: { stats: Stats }) {
 
 /* ---------- Reveal helpers ---------- */
 
-function useCountUp(target: number, duration = 900): number {
+function useCountUp(target: number, duration = 900, instant = false): number {
   const [value, setValue] = useState(() => {
+    if (instant) return target;
     if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       return target;
     }
@@ -136,7 +139,7 @@ function useCountUp(target: number, duration = 900): number {
   });
 
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (instant || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setValue(target);
       return;
     }
