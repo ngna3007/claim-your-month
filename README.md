@@ -73,7 +73,7 @@ redeploy.
 | `NEXT_PUBLIC_BASE_URL` | yes, in production | Host the poster QR encodes (the site root) |
 | `NEXT_PUBLIC_JOIN_URL` | no | Reveal "join us" link. Hidden until set. |
 | `NEXT_PUBLIC_JOIN_LABEL` | no | Button text. Defaults to `Come join us`. |
-| `NEXT_PUBLIC_MERCH` | no | Line under the reassurance. Hidden until set. |
+| `NEXT_PUBLIC_MERCH` | no | Line under the reassurance. Defaults to the free-gift prompt. Set empty to hide. |
 
 Example:
 
