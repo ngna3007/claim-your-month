@@ -6,8 +6,15 @@ const g = globalThis as unknown as { _libsql?: Client; _libsqlInit?: Promise<voi
 
 function client(): Client {
   if (g._libsql) return g._libsql;
-  const url = process.env.TURSO_DATABASE_URL ?? "file:./dev.db";
-  const authToken = process.env.TURSO_AUTH_TOKEN;
+  const url = process.env.TURSO_DATABASE_URL?.trim();
+  const authToken = process.env.TURSO_AUTH_TOKEN?.trim() || undefined;
+  if (!url) {
+    if (process.env.VERCEL) {
+      throw new Error("TURSO_DATABASE_URL is empty. Set a libsql:// URL in the Vercel project env.");
+    }
+    g._libsql = createClient({ url: "file:./dev.db" });
+    return g._libsql;
+  }
   g._libsql = createClient({ url, authToken });
   return g._libsql;
 }

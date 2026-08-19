@@ -78,7 +78,7 @@ function Reveal({ stats }: { stats: Stats }) {
         <h1 id="reveal-title" className="reveal__head">You just got phished.</h1>
         <p className="reveal__turn">Don&apos;t worry — it&apos;s a game, and you&apos;re in good company.</p>
 
-        <p className="bignum">You&apos;re phish <b>#{n}</b> today</p>
+        <p className="bignum">You&apos;re the <b>#{n}</b> person to be phished</p>
 
         <div className="tiles">
           <Tile label="Scanned the QR" value={stats.scans} />
