@@ -14,17 +14,17 @@ numbers on a screen. **No personal data is collected.**
 
 ## Pages
 
-- `/` — QR poster. Print it or put it on a display. The QR points at `/claim`.
-  Looks like a generic giveaway flyer.
-- `/claim` — unbranded form (name, email; never sent to the server). Submit
-  records an anonymous count and opens the reveal: CodeCatalyst lockup, rank,
-  stat tiles, insight box, sticker CTA.
+- `/` — unbranded claim form (name, email; never sent to the server). This is
+  what the printed QR opens. Submit records an anonymous count and opens the
+  reveal: CodeCatalyst lockup, rank, stat tiles, insight box, sticker CTA.
+- `/qr` — poster for print or a booth screen. The QR encodes the site root.
+- `/claim` — redirects to `/` so old links still work.
 - `/dashboard` — organizer view. Tiles plus a submits-over-time chart, polling
   every 4 seconds. Safe to leave on a booth screen.
 
 ## API
 
-- `POST /api/scan` — records a `/claim` page load (once per mount; a refresh
+- `POST /api/scan` — records a `/` page load (once per mount; a refresh
   counts again). No PII.
 - `POST /api/phished` — records a form submit. Returns `{ rank, scans, phished }`
   so the client can show "You're phish #N".
@@ -64,20 +64,25 @@ project named something that looks like a giveaway, for example
 
 ## Before the booth
 
-In `app/claim/page.tsx`, replace the join link:
+Copy `.env.example` to `.env.local` (or set the same keys in Vercel).
+`NEXT_PUBLIC_*` values are baked in at build time, so change them and
+redeploy.
 
-```ts
-const REGISTRATION_URL = "#registration-link-placeholder"; // Google Form / Luma / Discord
+| Key | Required | What it does |
+|-----|----------|----------------|
+| `NEXT_PUBLIC_BASE_URL` | yes, in production | Host the poster QR encodes (the site root) |
+| `NEXT_PUBLIC_JOIN_URL` | no | Reveal "join us" link. Hidden until set. |
+| `NEXT_PUBLIC_JOIN_LABEL` | no | Button text. Defaults to `Come join us`. |
+| `NEXT_PUBLIC_MERCH` | no | Line under the reassurance. Hidden until set. |
+
+Example:
+
+```bash
+NEXT_PUBLIC_BASE_URL=https://claim-your-month.vercel.app
+NEXT_PUBLIC_JOIN_URL=https://example.com/join
+NEXT_PUBLIC_JOIN_LABEL=Come join us
+NEXT_PUBLIC_MERCH=Show this screen to a CodeCatalyst member to grab your free sticker.
 ```
-
-Swap the merch line if you are not giving stickers:
-
-```ts
-<p className="merch">Show this screen to a CodeCatalyst member to grab your <b>free sticker</b>!</p>
-```
-
-Set `NEXT_PUBLIC_BASE_URL` to the public host so the poster QR encodes the
-right `/claim` URL.
 
 ## Credits
 

@@ -57,6 +57,9 @@ In the Vercel dashboard:
 | `TURSO_DATABASE_URL` | Paste the URL from step 1 |
 | `TURSO_AUTH_TOKEN` | Paste the auth token from step 1 |
 | `NEXT_PUBLIC_BASE_URL` | `https://<project-name>.vercel.app` (from step 3) |
+| `NEXT_PUBLIC_JOIN_URL` | Optional. Join / registration link. Hidden on the reveal until set. |
+| `NEXT_PUBLIC_JOIN_LABEL` | Optional. Join button text. Defaults to `Come join us`. |
+| `NEXT_PUBLIC_MERCH` | Optional. Merch line on the reveal. Hidden until set. |
 
 Save and **redeploy** (or click the deploy button).
 
@@ -64,8 +67,8 @@ Save and **redeploy** (or click the deploy button).
 
 The app should now work at `https://<project-name>.vercel.app`.
 
-- Visit `/` — see the QR poster.
-- Scan or visit `/claim` — fill the fake form and submit.
+- Visit `/` — fill the claim form and submit.
+- Visit `/qr` — see the printable QR poster (encodes the site root).
 - See the on-screen phish reveal with stats.
 - Visit `/dashboard` — see the live organizer view (anonymous counts + chart).
 
