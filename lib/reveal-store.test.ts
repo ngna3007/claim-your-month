@@ -33,3 +33,15 @@ test("readReveal ignores a missing or zeroed record", () => {
   writeReveal({ rank: 0, scans: 0, phished: 0 });
   expect(readReveal()).toBeNull();
 });
+
+test("writeReveal ignores a payload with no numeric rank", () => {
+  const store = memoryStorage();
+  Object.defineProperty(globalThis, "window", {
+    value: { localStorage: store },
+    configurable: true,
+  });
+  writeReveal({ rank: Number.NaN, scans: 2, phished: 1 });
+  writeReveal({ rank: undefined as unknown as number, scans: 2, phished: 1 });
+  expect(readReveal()).toBeNull();
+  expect(store.getItem("cym-reveal")).toBeNull();
+});

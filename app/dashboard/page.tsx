@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { phishRatePercent } from "@/lib/stats-display";
 
 type Bucket = { t: number; count: number };
 type Stats = { scans: number; phished: number; phishRate: number; series: Bucket[] };
@@ -15,14 +16,17 @@ export default function Dashboard() {
   useEffect(() => {
     let alive = true;
     const load = () =>
-      fetch("/api/stats").then((r) => r.json()).then((d) => { if (alive) setS(d); }).catch(() => {});
+      fetch("/api/stats", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((d) => { if (alive && typeof d.scans === "number") setS(d); })
+        .catch(() => {});
     load();
     const id = setInterval(load, 4000);
     return () => { alive = false; clearInterval(id); };
   }, []);
 
   if (!s) return <main className="stage"><p className="dash__loading">Loading…</p></main>;
-  const rate = Math.round(s.phishRate * 100);
+  const rate = phishRatePercent(s.phished, s.scans);
   return (
     <main className="dash">
       <header className="dash__head">

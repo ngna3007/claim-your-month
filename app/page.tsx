@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { baitLimits, validateBaitFields, type FieldErrors } from "@/lib/bait-fields";
 import { readReveal, writeReveal } from "@/lib/reveal-store";
+import { shouldReportScan } from "@/lib/scan-session";
 import { joinLabel, joinUrl, merch } from "@/lib/site";
+import { barFillPercent, mergeLiveTotals, parsePhishedResponse, phishRatePercent } from "@/lib/stats-display";
 
 type Stats = { rank: number; scans: number; phished: number };
 
@@ -10,77 +13,145 @@ export default function ClaimPage() {
   const [ready, setReady] = useState(false);
   const [result, setResult] = useState<Stats | null>(null);
   const [restored, setRestored] = useState(false);
-  const scanReported = useRef(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const submittingRef = useRef(false);
 
   useEffect(() => {
     const stored = readReveal();
     if (stored) {
       setRestored(true);
       setResult(stored);
-      void fetch("/api/stats")
+      void fetch("/api/stats", { cache: "no-store" })
         .then((r) => r.json())
         .then((s: { scans?: number; phished?: number }) => {
-          setResult((prev) =>
-            prev
-              ? { ...prev, scans: Number(s.scans) || prev.scans, phished: Number(s.phished) || prev.phished }
-              : prev,
-          );
+          setResult((prev) => {
+            if (!prev) return prev;
+            const next = { ...prev, ...mergeLiveTotals(prev, s) };
+            writeReveal(next);
+            return next;
+          });
         })
         .catch(() => {});
-    } else if (!scanReported.current) {
-      scanReported.current = true;
-      void fetch("/api/scan", { method: "POST" }).catch(() => {});
+    } else if (shouldReportScan()) {
+      void fetch("/api/scan", { method: "POST", credentials: "same-origin" }).catch(() => {});
     }
     setReady(true);
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (submittingRef.current || result) return;
+    submittingRef.current = true;
+    setSubmitting(true);
+    setError("");
     // Ethics: the typed values are never read or sent. Empty POST only.
-    let data: Stats = { rank: 0, scans: 0, phished: 0 };
     try {
-      const res = await fetch("/api/phished", { method: "POST" });
-      data = await res.json();
+      const res = await fetch("/api/phished", { method: "POST", credentials: "same-origin" });
+      const data = parsePhishedResponse(await res.json());
+      if (!res.ok || !data) throw new Error("unavailable");
+      writeReveal(data);
+      setResult(data);
     } catch {
-      /* offline: still reveal, with a zeroed rank */
+      submittingRef.current = false;
+      setSubmitting(false);
+      setError("Couldn't record that — try again.");
     }
-    writeReveal(data);
-    setResult(data);
   }
-
-  useEffect(() => {
-    if (!result) return;
-    const previous = document.title;
-    document.title = "You just got phished - CodeCatalyst";
-    return () => {
-      document.title = previous;
-    };
-  }, [result]);
 
   if (!ready) return <main className="stage stage--lure" />;
 
   return (
     <main className={result ? "stage" : "stage stage--lure"}>
-      {result ? <Reveal stats={result} instant={restored} /> : <BaitForm onSubmit={handleSubmit} />}
+      {result ? (
+        <Reveal stats={result} instant={restored} />
+      ) : (
+        <BaitForm onSubmit={handleSubmit} submitting={submitting} error={error} />
+      )}
     </main>
   );
 }
 
-function BaitForm({ onSubmit }: { onSubmit: (e: React.FormEvent) => void }) {
+function BaitForm({
+  onSubmit,
+  submitting,
+  error,
+}: {
+  onSubmit: (e: React.FormEvent) => void;
+  submitting: boolean;
+  error: string;
+}) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const nameRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const errors = validateBaitFields(name, email);
+    if (errors) {
+      setFieldErrors(errors);
+      (errors.name ? nameRef : emailRef).current?.focus();
+      return;
+    }
+    setFieldErrors({});
+    // Values stay in this component. The parent posts an empty body.
+    onSubmit(e);
+  }
+
   return (
     <section className="card promo">
       <h1 className="promo__head">Get Claude Pro free for a month.</h1>
       <p className="promo__sub">Tell us where to send it and it&apos;s yours.</p>
-      <form className="form" onSubmit={onSubmit}>
+      <form className="form" method="post" action="#" onSubmit={handleSubmit} noValidate autoComplete="off">
         <label className="field">
           <span>Full name</span>
-          <input type="text" autoComplete="off" placeholder="Alex Nguyen" />
+          <input
+            ref={nameRef}
+            type="text"
+            inputMode="text"
+            autoComplete="off"
+            autoCapitalize="words"
+            spellCheck={false}
+            placeholder="Alex Nguyen"
+            maxLength={baitLimits.name}
+            value={name}
+            onChange={(ev) => {
+              setName(ev.target.value);
+              if (fieldErrors.name) setFieldErrors((prev) => ({ ...prev, name: undefined }));
+            }}
+            aria-invalid={fieldErrors.name ? true : undefined}
+            aria-describedby={fieldErrors.name ? "name-error" : undefined}
+          />
+          {fieldErrors.name ? <p id="name-error" className="field__error" role="alert">{fieldErrors.name}</p> : null}
         </label>
         <label className="field">
           <span>Email</span>
-          <input type="email" autoComplete="off" placeholder="alex@school.edu" />
+          <input
+            ref={emailRef}
+            type="email"
+            inputMode="email"
+            autoComplete="off"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            placeholder="alex@school.edu"
+            maxLength={baitLimits.email}
+            value={email}
+            onChange={(ev) => {
+              setEmail(ev.target.value);
+              if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: undefined }));
+            }}
+            aria-invalid={fieldErrors.email ? true : undefined}
+            aria-describedby={fieldErrors.email ? "email-error" : undefined}
+          />
+          {fieldErrors.email ? <p id="email-error" className="field__error" role="alert">{fieldErrors.email}</p> : null}
         </label>
-        <button className="btn" type="submit">Claim my free month</button>
+        {error ? <p className="form__error" role="alert">{error}</p> : null}
+        <button className="btn" type="submit" disabled={submitting}>
+          {submitting ? "Claiming…" : "Claim my free month"}
+        </button>
       </form>
       <p className="fine">Limited to 50 gifts. Students only.</p>
     </section>
@@ -89,10 +160,17 @@ function BaitForm({ onSubmit }: { onSubmit: (e: React.FormEvent) => void }) {
 
 function Reveal({ stats, instant = false }: { stats: Stats; instant?: boolean }) {
   const n = useCountUp(stats.rank, 900, instant);
-  const rate = stats.scans > 0 ? Math.min(100, Math.round((stats.phished / stats.scans) * 100)) : 0;
+  const rate = phishRatePercent(stats.phished, stats.scans);
+  useEffect(() => {
+    const previous = document.title;
+    document.title = "You just got phished - CodeCatalyst";
+    return () => {
+      document.title = previous;
+    };
+  }, []);
   return (
     <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="reveal-title">
-      <Confetti />
+      {instant ? null : <Confetti />}
       <section className="card reveal">
         <Brand />
         <span className="badge badge--ok"><CheckIcon /> Gotcha</span>
@@ -153,7 +231,7 @@ function useCountUp(target: number, duration = 900, instant = false): number {
     }
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [target, duration]);
+  }, [target, duration, instant]);
 
   return value;
 }
@@ -168,8 +246,7 @@ function Tile({ label, value }: { label: string; value: number | string }) {
 }
 
 function Bar({ phished, scans }: { phished: number; scans: number }) {
-  const raw = scans > 0 ? (phished / scans) * 100 : 0;
-  const target = Math.min(100, Math.max(6, raw));
+  const target = barFillPercent(phished, scans);
   const [width, setWidth] = useState(0);
 
   useEffect(() => {

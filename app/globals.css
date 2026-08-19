@@ -116,6 +116,15 @@ p { margin: 0; }
   border-color: #18181b;
   box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.12);
 }
+.stage--lure .field input[aria-invalid="true"],
+.stage--lure .field input[aria-invalid="true"]:hover,
+.stage--lure .field input[aria-invalid="true"]:focus-visible {
+  border-color: #b42318;
+  box-shadow: none;
+}
+.stage--lure .field input[aria-invalid="true"]:focus-visible {
+  box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.16);
+}
 .stage--lure .flyer__scan { color: #3f3f46; }
 
 /* ---------- Brand lockup ---------- */
@@ -221,6 +230,29 @@ p { margin: 0; }
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal-bright) 30%, transparent);
 }
 .form .btn { margin-top: 4px; }
+.field__error,
+.form__error {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #b42318;
+}
+.field input[aria-invalid="true"] {
+  border-color: #b42318;
+}
+.field input[aria-invalid="true"]:focus-visible {
+  border-color: #b42318;
+  box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.16);
+}
+.btn:disabled,
+.btn:disabled:hover {
+  cursor: not-allowed;
+  opacity: 0.65;
+  transform: none;
+  filter: none;
+  box-shadow: none;
+}
+.stage--lure .btn:disabled:hover { background: #18181b; }
 
 .fine { margin-top: 18px; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
 
@@ -312,7 +344,7 @@ p { margin: 0; }
 }
 .bar__fill {
   height: 100%;
-  min-width: 6%;
+  min-width: 0;
   border-radius: 4px;
   background: linear-gradient(90deg, var(--teal), var(--teal-bright));
   transition: width 0.8s var(--ease);

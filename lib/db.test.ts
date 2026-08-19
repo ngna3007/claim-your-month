@@ -79,3 +79,31 @@ test("getStats buckets phished events into correct 15-minute windows (integer-sa
   expect(windowAStart).toBe(Math.floor(tsA2 / 900_000) * 900_000);
   expect(windowBStart).toBe(Math.floor(tsB1 / 900_000) * 900_000);
 });
+
+test("recordPhished records a matching scan when none exist", async () => {
+  const raw = createClient({ url: process.env.TURSO_DATABASE_URL! });
+  try {
+    await raw.execute("DELETE FROM events");
+  } finally {
+    raw.close();
+  }
+  const result = await recordPhished();
+  expect(result).toEqual({ rank: 1, scans: 1, phished: 1 });
+});
+
+test("getStats never reports a phishRate above 1", async () => {
+  const raw = createClient({ url: process.env.TURSO_DATABASE_URL! });
+  try {
+    await raw.execute("DELETE FROM events");
+    await raw.execute({
+      sql: "INSERT INTO events (type, ts) VALUES ('phished', ?), ('phished', ?)",
+      args: [1, 2],
+    });
+  } finally {
+    raw.close();
+  }
+  const stats = await getStats();
+  expect(stats.phished).toBe(2);
+  expect(stats.scans).toBe(0);
+  expect(stats.phishRate).toBe(1);
+});

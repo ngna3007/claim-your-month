@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import QRCode from "qrcode";
+import { publicSiteUrl } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -10,12 +11,8 @@ export const metadata: Metadata = {
 };
 
 async function getPublicUrl(): Promise<string> {
-  const envBase = process.env.NEXT_PUBLIC_BASE_URL;
-  if (envBase) return envBase.replace(/\/$/, "");
   const h = await headers();
-  const host = h.get("host") ?? "localhost:3000";
-  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  return `${proto}://${host}`;
+  return publicSiteUrl(process.env.NEXT_PUBLIC_BASE_URL, h.get("host"), h.get("x-forwarded-proto"));
 }
 
 export default async function PosterPage() {

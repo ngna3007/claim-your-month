@@ -29,7 +29,11 @@ function init(): Promise<void> {
            ts   INTEGER NOT NULL
          );`,
       )
-      .then(() => undefined);
+      .then(() => undefined)
+      .catch((err) => {
+        g._libsqlInit = undefined;
+        throw err;
+      });
   }
   return g._libsqlInit;
 }
@@ -52,11 +56,21 @@ export async function recordScan(): Promise<void> {
 
 export async function recordPhished(): Promise<{ rank: number; scans: number; phished: number }> {
   await init();
+  const now = Date.now();
   await client().execute({
     sql: "INSERT INTO events (type, ts) VALUES ('phished', ?)",
-    args: [Date.now()],
+    args: [now],
   });
   const [phished, scans] = await Promise.all([count("phished"), count("scan")]);
+  // A submit is also a visit. If the page-load scan never landed, record one
+  // so the rate cannot climb above 100% from a successful form post alone.
+  if (scans < phished) {
+    await client().execute({
+      sql: "INSERT INTO events (type, ts) VALUES ('scan', ?)",
+      args: [now],
+    });
+    return { rank: phished, scans: scans + 1, phished };
+  }
   return { rank: phished, scans, phished };
 }
 
@@ -84,5 +98,6 @@ export async function getStats(): Promise<{
           GROUP BY bucket ORDER BY bucket`,
   );
   const series = rows.rows.map((r) => ({ t: Number(r.bucket), count: Number(r.c) }));
-  return { scans, phished, phishRate: scans > 0 ? phished / scans : 0, series };
+  const phishRate = phished > 0 && scans <= 0 ? 1 : scans > 0 ? Math.min(1, phished / scans) : 0;
+  return { scans, phished, phishRate, series };
 }
